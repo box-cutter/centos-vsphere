@@ -1,0 +1,81 @@
+{
+  "variables": {
+    "cm": "nocm",
+    "cm_version": "",
+    "cm_set_path": "",
+    "cleanup_pause": "",
+    "headless": "",
+    "iso_url": "http://mirrors.kernel.org/centos/6.5/isos/x86_64/CentOS-6.5-x86_64-bin-DVD1.iso",
+    "iso_checksum": "32c7695b97f7dcd1f59a77a71f64f2957dddf738",
+    "update": "false",
+    "http_proxy": "{{env `http_proxy`}}",
+    "https_proxy": "{{env `https_proxy`}}",
+    "ftp_proxy": "{{env `ftp_proxy`}}",
+    "rsync_proxy": "{{env `rsync_proxy`}}",
+    "no_proxy": "{{env `no_proxy`}}",
+
+    "remote_type": "esx5",
+    "remote_host": "10.1.10.209",
+    "remote_datastore": "datastore1",
+    "remote_username": "root",
+    "remote_password": "password",
+    "vm_network": "VM Network"
+  },
+  "builders": [{
+    "vm_name": "centos65-esxi",
+    "remote_type": "{{ user `remote_type` }}",
+    "remote_host": "{{ user `remote_host` }}",
+    "remote_datastore": "{{ user `remote_datastore` }}",
+    "remote_username": "{{ user `remote_username` }}",
+    "remote_password": "{{ user `remote_password` }}",
+    "disk_type_id": "thin", 
+
+    "type": "vmware-iso",
+    "guest_os_type": "centos-64",
+    "http_directory": "http",
+    "iso_url": "{{ user `iso_url` }}",
+    "iso_checksum": "{{ user `iso_checksum` }}",
+    "iso_checksum_type": "sha1",
+    "ssh_username": "vagrant",
+    "ssh_password": "vagrant",
+    "ssh_wait_timeout": "10000s",
+    "headless": "{{ user `headless` }}",
+    "tools_upload_flavor": "linux",
+    "boot_command": [
+      "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort}}/ks6.cfg<enter>"
+    ],
+    "shutdown_command": "echo 'vagrant'|sudo -S shutdown -P now",
+    "disk_size": 10140,
+    "vmx_data": {
+      "memsize": "512",
+      "numvcpus": "1",
+
+      "ethernet0.networkName": "{{user `vm_network`}}"
+    }
+  }],
+  "provisioners": [{
+    "type": "shell",
+    "environment_vars": [
+      "CM={{user `cm`}}",
+      "CM_VERSION={{user `cm_version`}}",
+      "CM_SET_PATH={{user `cm_set_path`}}",
+      "CLEANUP_PAUSE={{user `cleanup_pause`}}",
+      "UPDATE={{user `update`}}",
+      "http_proxy={{user `http_proxy`}}",
+      "https_proxy={{user `https_proxy`}}",
+      "ftp_proxy={{user `ftp_proxy`}}",
+      "rsync_proxy={{user `rsync_proxy`}}",
+      "no_proxy={{user `no_proxy`}}"
+    ],
+    "execute_command": "echo 'vagrant' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+    "scripts": [
+      "script/fix-slow-dns.sh",
+      "script/sshd.sh",
+      "script/update.sh",
+      "script/vagrant.sh",
+      "script/vmtool.sh",
+      "script/cmtool.sh",
+      "script/cleanup.sh"
+    ]
+  }]
+}
